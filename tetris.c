@@ -56,6 +56,7 @@
 
 //--globais
 #define MAX_FILA 10 //tamanho maximo da fila
+#define MAX_PILHA 3 //tamanho maximo da pilha
 #define QTD_PECAS 5 //quantidade inicial fixa de peças
 
 //--struct do elemento (Peças)
@@ -71,6 +72,13 @@ typedef struct{
     int fim;
     int total;
 } Fila;
+
+//--struct da pilha (Pilha)
+typedef struct{
+    Pecas tetrisPilha[MAX_PILHA];
+    int topo; //--representa o índice do último elemento inserido.
+    //--quando a pilha está vazia, o topo é -1.
+} Pilha;
 
 //--funçao gerarId para gerar o proximo id
 int gerarId(){
@@ -109,6 +117,12 @@ void inicializarFila(Fila *f){
     }
 } //--a inicializacao define o ponto de partida, visando seu funcionamento correto desde o inicio
 
+//--inicializar pilha
+//--a pilha deve ser inicializada com o valor de topo = -1, indicando que está vazia.
+void inicializarPilha(Pilha *p){
+    p->topo = -1;
+}
+
 //--verificar fila cheia ou vazia
 //--fila cheia
 int filaCheia(Fila *f){
@@ -119,6 +133,17 @@ int filaCheia(Fila *f){
 int filaVazia(Fila *f){
     return f->total == 0;
 } //--fila vazia impede remoçoes, evitando acesso a posiçoes invalidas
+
+//-verificar pilha cheia ou vazia
+//--pilha cheia
+int pilhaCheia(Pilha *p) {
+    return p->topo == MAX_PILHA - 1; //--o valor retorna verdadeiro (1) se o topo estiver no último índice possível do vetor.
+}
+
+//--a seguir, verificamos se a pilha está vazia, ou seja, se não há elementos inseridos.
+int pilhaVazia(Pilha *p) {
+    return p->topo == -1; //--O valor retorna verdadeiro (1) se o topo for igual a -1.
+}
 
 /*
 Enqueue e dequeue são as funções que trazem a característica FIFO para a estrutura de dados fila.
@@ -152,6 +177,32 @@ void remover(Fila *f, Pecas *p){
 //--o dequeue insere no final e atualiza os controles da fila, e o uso do modulo mantem a circularidade
 //--a remoçao retorna o primeiro elemento e ajusta a posiçao de incio da fila
 
+//--inserir (push)
+//--adiciona um novo elemento no topo da pilha.
+void push(Pilha *p, Pecas novaPeca) {
+    if (pilhaCheia(p)) {
+        printf("Pilha cheia. Não é possível inserir.\n");
+        return;
+    }
+ 
+    p->topo++;
+    p->tetrisPilha[p->topo] = novaPeca;
+} //--o método verifica se a pilha está cheia.
+//--em caso negativo, o método incrementa o topo e insere o novo elemento naquela posição.
+
+//--remover (pop)
+//--retira o elemento do topo da pilha.
+void pop(Pilha *p, Pecas *novaPeca) {
+    if (pilhaVazia(p)) {
+        printf("Pilha vazia. Não é possível remover.\n");
+        return;
+    }
+
+    *novaPeca = p->tetrisPilha[p->topo];
+    p->topo--;
+} //--o método verifica se a pilha está vazia antes de tentar remover.
+//--a função copia o conteúdo do topo para o ponteiro removido, e então reduz o topo.
+
 //--mostrar fila
 void mostrarFila(Fila *f){
     printf("Fila atual (%d peças):\n", f->total);
@@ -167,12 +218,23 @@ void mostrarFila(Fila *f){
     printf("\n");
 } //--essa funcao percorre a fila desde o inicio ate o total visto atualmente
 
+//--mostrar pilha
+void mostrarPilha(Pilha *p) {
+    printf("Pilha de peças reserva (%d) (topo -> base):\n", p->topo + 1);
+    for (int i = p->topo; i >= 0; i--) {
+        printf("[%c, %d] ", p->tetrisPilha[i].nome, p->tetrisPilha[i].idPeca);
+    }
+    printf("\n");
+}
+
 //--declaracao e exibicao no main
 int main(){
     Fila f;
+    Pilha p;
     int opcao;
     srand(time(NULL)); //--para gerar peças aleatórias
     inicializarFila(&f); //--inicializa a fila
+    inicializarPilha(&p); //--inicializa a pilha
 
     printf("=================================================\n");
     printf("                  Tetris Stack\n");
@@ -180,9 +242,11 @@ int main(){
 
      do {
         mostrarFila(&f);
+        mostrarPilha(&p);
         printf("\nEscolha uma opção:\n");
-        printf("1 - Jogar peça (remover da frente)\n"); //--dequeue
-        printf("2 - Adicionar nova peça ao final\n"); //--enqueue
+        printf("1 - Jogar peça (remover da fila)\n");
+        printf("2 - Reservar peça (mover para a pilha)\n");
+        printf("3 - Usar peça reservada (do topo da pilha)\n");
         printf("0 - Sair\n");
         printf("Opção: ");
         scanf("%d", &opcao);
@@ -194,11 +258,20 @@ int main(){
                 remover(&f, &jogada);
                 printf("\nPeça jogada: [%c %d]\n", jogada.nome, jogada.idPeca);
                 break;
-            case 2: {
+            case 2:
+                Pecas reservada;
+                remover(&f, &reservada);
+                push(&p, reservada);
+                printf("Peça reservada: [%c %d]\n", reservada.nome, reservada.idPeca);
                 Pecas novaPeca = gerarPeca();
                 inserir(&f, novaPeca);
                 break;
-            }
+            case 3:
+                Pecas usada;
+                pop(&p, &usada);
+                printf("Peça reservada usada: [%c %d]\n", usada.nome, usada.idPeca);
+                break;
+
             case 0:
                 printf("Saindo...\n");
                 break;
@@ -209,7 +282,3 @@ int main(){
 
     return 0;
 }
-
-
-
-
